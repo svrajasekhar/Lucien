@@ -1,0 +1,200 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Lucien Apartments – Revenue & Expense Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f6f8fa;
+      --card: #ffffff;
+      --text: #222;
+      --muted: #666;
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 12px;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    h1 {
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .toggle {
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 20px;
+      background: var(--card);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+
+    .kpi-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .kpi, .chart-box {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .kpi h3 {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .kpi p {
+      margin-top: 6px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .chart {
+      min-height: 340px;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="top-bar">
+  <h1>Lucien Apartments – Revenue & Expense Dashboard</h1>
+  <div class="toggle" onclick="toggleDark()">🌙 Dark</div>
+</div>
+
+<div class="kpi-container">
+  <div class="kpi">
+    <h3>Opening Balance (01 Jan 2025)</h3>
+    <p id="openingBalance">₹0</p>
+  </div>
+  <div class="kpi">
+    <h3>Total Credit</h3>
+    <p id="totalCredit">₹0</p>
+  </div>
+  <div class="kpi">
+    <h3>Total Debit</h3>
+    <p id="totalDebit">₹0</p>
+  </div>
+  <div class="kpi">
+    <h3>Closing Balance (Till Date)</h3>
+    <p id="closingBalance">₹0</p>
+  </div>
+</div>
+
+<div class="chart-box">
+  <h3>Revenue – Category Breakdown</h3>
+  <div id="revenuePie" class="chart"></div>
+</div>
+
+<div class="chart-box">
+  <h3>Expense – Category Breakdown</h3>
+  <div id="expensePie" class="chart"></div>
+</div>
+
+<div class="footer">
+  Last updated from GitHub: <span id="lastUpdated">–</span>
+</div>
+
+<script>
+const DATA_URL = "https://raw.githubusercontent.com/svrajasekhar/Lucien/main/Year2025Data.json";
+const OPENING_BALANCE = 563124.60;
+
+function formatINR(num) {
+  return "₹" + num.toLocaleString("en-IN", { minimumFractionDigits: 2 });
+}
+
+function toggleDark() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem("darkMode", document.body.classList.contains("dark"));
+}
+
+if (localStorage.getItem("darkMode") === "true") {
+  document.body.classList.add("dark");
+}
+
+fetch(DATA_URL)
+  .then(res => {
+    document.getElementById("lastUpdated").textContent = new Date().toLocaleString();
+    return res.json();
+  })
+  .then(data => {
+    let totalCredit = 0, totalDebit = 0;
+    const revenue = {}, expense = {};
+
+    data.forEach(tx => {
+      const credit = parseFloat((tx.Credit || "0").replace(/[₹,]/g, "")) || 0;
+      const debit = parseFloat((tx.Debit || "0").replace(/[₹,]/g, "")) || 0;
+
+      if (credit) {
+        totalCredit += credit;
+        revenue[tx.Particulars] = (revenue[tx.Particulars] || 0) + credit;
+      }
+      if (debit) {
+        totalDebit += debit;
+        expense[tx.Particulars] = (expense[tx.Particulars] || 0) + debit;
+      }
+    });
+
+    const closingBalance = OPENING_BALANCE + totalCredit - totalDebit;
+
+    document.getElementById("openingBalance").textContent = formatINR(OPENING_BALANCE);
+    document.getElementById("totalCredit").textContent = formatINR(totalCredit);
+    document.getElementById("totalDebit").textContent = formatINR(totalDebit);
+    document.getElementById("closingBalance").textContent = formatINR(closingBalance);
+
+    Plotly.newPlot("revenuePie", [{
+      labels: Object.keys(revenue),
+      values: Object.values(revenue),
+      type: "pie",
+      hole: 0.4
+    }], { paper_bgcolor: "transparent", plot_bgcolor: "transparent" }, { responsive: true });
+
+    Plotly.newPlot("expensePie", [{
+      labels: Object.keys(expense),
+      values: Object.values(expense),
+      type: "pie",
+      hole: 0.4
+    }], { paper_bgcolor: "transparent", plot_bgcolor: "transparent" }, { responsive: true });
+  });
+</script>
+
+</body>
+</html>
