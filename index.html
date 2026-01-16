@@ -137,24 +137,5 @@ fetch(DATA_URL).then(r=>r.json()).then(data=>{
   pie(exp,"expPie",document.getElementById("expOthers"),"Expense");
 });
 </script>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const container = document.querySelector(".kpi-container");
-  if (!container) return;
-
-  const opening = container.querySelector("#openingBalance")?.closest(".kpi-card");
-  const closing = container.querySelector("#closingBalance")?.closest(".kpi-card");
-  const credit = container.querySelector("#totalCredit")?.closest(".kpi-card");
-  const debit = container.querySelector("#totalDebit")?.closest(".kpi-card");
-
-  container.innerHTML = "";
-  if (opening) container.appendChild(opening);
-  if (closing) container.appendChild(closing);
-  if (credit) container.appendChild(credit);
-  if (debit) container.appendChild(debit);
-});
-</script>
-
 </body>
 </html>
